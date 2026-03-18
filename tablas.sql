@@ -64,7 +64,7 @@ CREATE TABLE calificaciones (
     FOREIGN KEY (id_calificador) REFERENCES usuarios(id)
 );
 
---  TABLA COMENTARIOS (opcional en proyectos)
+--  TABLA COMENTARIOS 
 CREATE TABLE comentarios (
     id INT IDENTITY(1,1) PRIMARY KEY,
     id_proyecto INT,
