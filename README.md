@@ -1,7 +1,6 @@
 # Click a Construir — Flask App
 
-Versión funcional en Python/Flask del diseño Figma "Design minimal SaaS UI".
-
+Versión funcional en Python/Flask 
 ## Estructura
 
 ```
@@ -50,7 +49,7 @@ http://127.0.0.1:5000
 | `/perfil`         | Perfil del usuario               |
 | `/logout`         | Cierre de sesión                 |
 
-## Próximos pasos sugeridos
+## Próximos pasos 
 
 - Conectar base de datos (SQLite + SQLAlchemy)
 - Hash de contraseñas (bcrypt)
