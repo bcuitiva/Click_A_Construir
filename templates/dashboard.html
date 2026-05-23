@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Click a Construir{% endblock %}
+
+{% block body %}
+<div class="app-layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar__logo">
+      <img src="{{ url_for('static', filename='img/logo_dashboard.png') }}" alt="Click a Construir" />
+    </div>
+    <nav class="sidebar__nav">
+      <ul>
+        <li>
+          <a href="{{ url_for('dashboard') }}"
+             class="nav-item {% if active_menu == 'inicio' %}nav-item--active{% endif %}">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            Inicio
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('proyectos') }}"
+             class="nav-item {% if active_menu == 'proyectos' %}nav-item--active{% endif %}">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
+            Proyectos
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('mensajes') }}"
+             class="nav-item {% if active_menu == 'mensajes' %}nav-item--active{% endif %}">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            Mensajes
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('perfil') }}"
+             class="nav-item {% if active_menu == 'perfil' %}nav-item--active{% endif %}">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+            Perfil
+          </a>
+        </li>
+      </ul>
+    </nav>
+    <div class="sidebar__footer">
+      <a href="{{ url_for('logout') }}" class="logout-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        Cerrar sesión
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-wrapper">
+
+    <!-- Top Header -->
+    <header class="top-header">
+      <form method="GET" action="{{ url_for('dashboard') }}" class="search-form">
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input type="search" name="q" placeholder="Buscar profesionales, proyectos..."
+                 value="{{ query | default('') }}" />
+        </div>
+      </form>
+      <div class="user-badge">
+        <div class="avatar">{{ user.name[:2].upper() }}</div>
+        <span class="user-name">{{ user.name }}</span>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <main class="content">
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="alert alert--{{ category }} mb-4">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <!-- ===== INICIO ===== -->
+      {% if active_menu == 'inicio' %}
+      <h1 class="page-title">Profesionales en tu zona</h1>
+      <div class="cards-grid">
+        {% for p in professionals %}
+        <div class="prof-card">
+          <div class="prof-card__top">
+            <div class="avatar avatar--lg">{{ p.initials }}</div>
+            <div class="prof-rating">
+              <svg class="star-icon" viewBox="0 0 24 24" fill="#F57C00" width="16" height="16">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+              <span class="rating-val">{{ p.rating }}</span>
+              <span class="rating-count">({{ p.reviews }})</span>
+            </div>
+          </div>
+          <h3 class="prof-card__name">{{ p.name }}</h3>
+          <p class="prof-card__specialty">{{ p.specialty }}</p>
+          <div class="prof-card__location">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+            </svg>
+            {{ p.location }}
+          </div>
+          <button class="btn btn--primary btn--full mt-4">Ver perfil</button>
+        </div>
+        {% else %}
+        <p class="empty-state">No se encontraron profesionales para "{{ query }}".</p>
+        {% endfor %}
+      </div>
+
+      <!-- ===== PROYECTOS ===== -->
+      {% elif active_menu == 'proyectos' %}
+      <div class="page-header">
+        <h1 class="page-title">Mis proyectos</h1>
+      </div>
+      <div class="cards-grid">
+        {% for p in projects %}
+        <div class="proj-card">
+          <h3 class="proj-card__name">{{ p.name }}</h3>
+          <div class="proj-card__location">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+            </svg>
+            {{ p.location }}
+          </div>
+          <div class="proj-card__budget">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#F57C00" stroke-width="2" width="14" height="14">
+              <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+            {{ p.budget | format_cop }} COP
+          </div>
+          <span class="status-badge status-badge--{{ p.status | lower | replace(' ', '-') }}">
+            {{ p.status }}
+          </span>
+          <button class="btn btn--primary btn--full mt-4">Ver detalle</button>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- ===== MENSAJES ===== -->
+      {% elif active_menu == 'mensajes' %}
+      <h1 class="page-title">Mensajes</h1>
+      <div class="empty-card">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5" width="64" height="64">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        <p>Aún no tienes mensajes</p>
+      </div>
+
+      <!-- ===== PERFIL ===== -->
+      {% elif active_menu == 'perfil' %}
+      <h1 class="page-title">Mi perfil</h1>
+      <div class="profile-card">
+        <div class="avatar avatar--xl">{{ user.name[:2].upper() }}</div>
+        <h2>{{ user.name }}</h2>
+        <p class="profile-email">{{ user.email }}</p>
+        <span class="role-badge">{{ user.role | capitalize }}</span>
+      </div>
+      {% endif %}
+
+    </main>
+  </div>
+
+</div>
+
+<!-- Floating Add Button (solo en proyectos) -->
+{% if active_menu in ['inicio', 'proyectos'] %}
+<button class="fab" id="fabBtn" title="Crear proyecto">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="24" height="24">
+    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+  </svg>
+</button>
+
+<!-- Modal: Crear Proyecto -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal__header">
+      <h2>Crear nuevo proyecto</h2>
+      <button class="modal__close" id="modalClose">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <form method="POST" action="{{ url_for('crear_proyecto') }}" class="modal__form">
+      <div class="form-group">
+        <label>Nombre del proyecto</label>
+        <input type="text" name="name" placeholder="Ej: Renovación de cocina" required />
+      </div>
+      <div class="form-group">
+        <label>Descripción</label>
+        <textarea name="description" placeholder="Describe los detalles del proyecto..." rows="3" required></textarea>
+      </div>
+      <div class="form-group">
+        <label>Ubicación</label>
+        <input type="text" name="location" placeholder="Ej: Bogotá Centro" required />
+      </div>
+      <div class="form-group">
+        <label>Presupuesto (COP)</label>
+        <input type="number" name="budget" placeholder="Ej: 15000000" min="0" required />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Fecha de inicio</label>
+          <input type="date" name="start_date" required />
+        </div>
+        <div class="form-group">
+          <label>Fecha estimada de fin</label>
+          <input type="date" name="end_date" required />
+        </div>
+      </div>
+      <button type="submit" class="btn btn--primary btn--full mt-2">Publicar proyecto</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
