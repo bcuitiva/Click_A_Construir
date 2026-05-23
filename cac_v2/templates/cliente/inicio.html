@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% from "macros.html" import sidebar, topbar %}
+{% block title %}Inicio — Click a Construir{% endblock %}
+{% block body %}
+<div class="app-layout">
+  {{ sidebar("cliente", active_menu, user, unread) }}
+  <div class="main-wrapper">
+    {{ topbar(user, "Buscar profesionales...", url_for('cli_inicio'), unread) }}
+    <main class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}<div class="alert alert--{{ cat }}">{{ msg }}</div>{% endfor %}
+      {% endwith %}
+
+      <!-- Filtros -->
+      <form method="GET" action="{{ url_for('cli_inicio') }}" class="filter-bar">
+        <select name="specialty" onchange="this.form.submit()">
+          <option value="">Todas las especialidades</option>
+          {% for s in specialties %}<option value="{{ s }}" {% if specialty==s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+        </select>
+        <select name="min_rating" onchange="this.form.submit()">
+          <option value="">Cualquier calificación</option>
+          <option value="4.5" {% if min_rating=='4.5' %}selected{% endif %}>★ 4.5+</option>
+          <option value="4.0" {% if min_rating=='4.0' %}selected{% endif %}>★ 4.0+</option>
+          <option value="3.5" {% if min_rating=='3.5' %}selected{% endif %}>★ 3.5+</option>
+        </select>
+        <input type="text" name="city" placeholder="Ciudad o zona" value="{{ city }}"/>
+        <input type="hidden" name="q" value="{{ q }}"/>
+        <button type="submit" class="btn btn--primary">Filtrar</button>
+        {% if q or specialty or city or min_rating %}
+        <a href="{{ url_for('cli_inicio') }}" class="btn btn--ghost">Limpiar</a>
+        {% endif %}
+      </form>
+
+      <div class="section-header">
+        <h1>Profesionales en tu zona</h1>
+        <div class="carousel-controls">
+          <button class="carousel-btn" id="scrollLeft">&#8592;</button>
+          <button class="carousel-btn" id="scrollRight">&#8594;</button>
+        </div>
+      </div>
+
+      <!-- Carrusel -->
+      <div class="prof-carousel" id="profCarousel">
+        {% for p in professionals %}
+        <a href="{{ url_for('cli_perfil_profesional', prof_id=p.id) }}" class="prof-card-scroll">
+          {% if p.avatar %}
+          <img src="{{ p.avatar }}" alt="{{ p.name }}" class="prof-card-scroll__avatar prof-card-scroll__avatar--photo"/>
+          {% else %}
+          <div class="prof-card-scroll__avatar">{{ p.initials }}</div>
+          {% endif %}
+          <div class="prof-card-scroll__rating">
+            <span class="star">★</span>{{ p.rating }}
+            <span class="rev-count">({{ p.reviews }})</span>
+          </div>
+          <h3 class="prof-card-scroll__name">{{ p.name }}</h3>
+          <p class="prof-card-scroll__spec">{{ p.specialty }}</p>
+          <p class="prof-card-scroll__loc">📍 {{ p.location }}</p>
+          <div class="prof-card-scroll__cta">Ver perfil →</div>
+        </a>
+        {% else %}
+        <p class="empty-state">No se encontraron profesionales.</p>
+        {% endfor %}
+      </div>
+
+      <!-- Grid todos los profesionales -->
+      {% if not q and not specialty and not city and not min_rating %}
+      <h2 class="section-title mt-6">Todos los profesionales</h2>
+      <div class="prof-grid">
+        {% for p in professionals %}
+        <a href="{{ url_for('cli_perfil_profesional', prof_id=p.id) }}" class="prof-list-item">
+          {% if p.avatar %}
+          <img src="{{ p.avatar }}" alt="{{ p.name }}" class="avatar avatar--photo"/>
+          {% else %}
+          <div class="avatar">{{ p.initials }}</div>
+          {% endif %}
+          <div class="prof-list-item__info">
+            <strong>{{ p.name }}</strong>
+            <span>{{ p.specialty }}</span>
+            <span class="text-muted">📍 {{ p.location }}</span>
+          </div>
+          <div class="prof-list-item__right">
+            <span class="star">★</span><strong>{{ p.rating }}</strong>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </main>
+  </div>
+</div>
+{% endblock %}

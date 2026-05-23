@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% from "macros.html" import sidebar, topbar, avatar_img %}
+{% block title %}{{ proj.name }} — Click a Construir{% endblock %}
+{% block body %}
+<div class="app-layout">
+  {{ sidebar("profesional", active_menu, user, unread) }}
+  <div class="main-wrapper">
+    {{ topbar(user, "Buscar...", url_for('pro_proyectos'), unread) }}
+    <main class="content">
+      <a href="{{ url_for('pro_proyectos') }}" class="back-link">← Volver a mis proyectos</a>
+
+      <div class="proj-detail-header">
+        <div>
+          <h1>{{ proj.name }}</h1>
+          <p class="text-muted">👤 {{ proj.client_name }} · 📍 {{ proj.location }} · {{ proj.budget|format_cop }} COP</p>
+        </div>
+        <form method="POST" action="{{ url_for('pro_proyecto_gestion', proj_id=proj.id) }}" class="inline-form">
+          <input type="hidden" name="action" value="update_status"/>
+          <select name="status" onchange="this.form.submit()" class="status-select">
+            <option value="Pendiente"   {% if proj.status=='Pendiente' %}selected{% endif %}>Pendiente</option>
+            <option value="En progreso" {% if proj.status=='En progreso' %}selected{% endif %}>En progreso</option>
+            <option value="Completado"  {% if proj.status=='Completado' %}selected{% endif %}>Completado</option>
+          </select>
+        </form>
+      </div>
+
+      <!-- Progreso -->
+      <div class="info-card">
+        <div class="progress-header">
+          <h2>Progreso general</h2><span class="progress-pct">{{ proj.progress }}%</span>
+        </div>
+        <div class="progress-bar progress-bar--lg">
+          <div class="progress-bar__fill" style="width:{{ proj.progress }}%"></div>
+        </div>
+        <p class="text-muted mt-2">{{ proj.tasks|selectattr('done')|list|length }} de {{ proj.tasks|length }} tareas completadas</p>
+      </div>
+
+      <div class="two-col-layout">
+        <div class="col-main">
+
+          <!-- Fotos del proyecto -->
+          <div class="info-card">
+            <div class="section-header-sm">
+              <h2>Fotos del proyecto</h2>
+            </div>
+            {% if proj.images %}
+            <div class="img-gallery">
+              {% for img in proj.images %}
+              <div class="img-gallery__item">
+                <img src="{{ img }}" alt="Foto del proyecto"/>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+            <form method="POST" action="{{ url_for('pro_proyecto_gestion', proj_id=proj.id) }}"
+                  enctype="multipart/form-data" class="img-upload-form mt-3">
+              <input type="hidden" name="action" value="add_project_image"/>
+              <label class="upload-zone">
+                <input type="file" name="project_images" accept="image/*" multiple/>
+                <span>📷 Agregar fotos del proyecto</span>
+              </label>
+              <button type="submit" class="btn btn--outline mt-2">Subir fotos</button>
+            </form>
+          </div>
+
+          <!-- Tareas -->
+          <div class="info-card">
+            <h2>Tareas</h2>
+            <ul class="task-list">
+              {% for t in proj.tasks %}
+              <li class="task-item {% if t.done %}task-item--done{% endif %}">
+                <form method="POST" action="{{ url_for('pro_proyecto_gestion', proj_id=proj.id) }}" class="inline-form">
+                  <input type="hidden" name="action" value="toggle_task"/>
+                  <input type="hidden" name="task_id" value="{{ t.id }}"/>
+                  <button type="submit" class="task-toggle-btn">
+                    <span class="task-check {% if t.done %}task-check--done{% endif %}">{% if t.done %}✓{% else %}○{% endif %}</span>
+                  </button>
+                </form>
+                <span class="task-text">{{ t.text }}</span>
+                {% if t.date %}<span class="task-date">{{ t.date }}</span>{% endif %}
+              </li>
+              {% endfor %}
+            </ul>
+            <form method="POST" action="{{ url_for('pro_proyecto_gestion', proj_id=proj.id) }}" class="add-task-form">
+              <input type="hidden" name="action" value="add_task"/>
+              <input type="text" name="task_text" placeholder="Nueva tarea..." required class="task-input"/>
+              <button type="submit" class="btn btn--primary">+ Agregar</button>
+            </form>
+          </div>
+
+          <!-- Publicar avance con imágenes -->
+          <div class="info-card">
+            <h2>Publicar avance</h2>
+            <form method="POST" action="{{ url_for('pro_proyecto_gestion', proj_id=proj.id) }}"
+                  enctype="multipart/form-data">
+              <input type="hidden" name="action" value="add_update"/>
+              <div class="form-group">
+                <textarea name="update_text" rows="3"
+                  placeholder="Describe el avance de hoy..." required></textarea>
+              </div>
+              <!-- Subida de imágenes del avance -->
+              <div class="form-group">
+                <label class="upload-zone">
+                  <input type="file" name="update_images" accept="image/*" multiple id="updateImgInput"/>
+                  <span>📷 Adjuntar fotos del avance (opcional)</span>
+                </label>
+                <div id="updateImgPreview" class="img-preview-row"></div>
+              </div>
+              <button type="submit" class="btn btn--primary">Publicar avance</button>
+            </form>
+          </div>
+
+          <!-- Línea de tiempo de avances -->
+          <div class="info-card">
+            <h2>Historial de avances</h2>
+            {% if proj.updates %}
+            <div class="timeline">
+              {% for upd in proj.updates|reverse %}
+              <div class="timeline-item">
+                <div class="timeline-dot timeline-dot--orange"></div>
+                <div class="timeline-content">
+                  <div class="timeline-meta">
+                    <strong>{{ upd.author }}</strong>
+                    <span class="text-muted">{{ upd.date }}</span>
+                  </div>
+                  <p>{{ upd.text }}</p>
+                  {% if upd.images %}
+                  <div class="img-gallery img-gallery--sm mt-2">
+                    {% for img in upd.images %}
+                    <div class="img-gallery__item">
+                      <img src="{{ img }}" alt="Foto del avance"/>
+                    </div>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted">Aún no has publicado avances.</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="col-side">
+          <div class="info-card">
+            <h2>Detalles del proyecto</h2>
+            <div class="detail-grid">
+              <span class="text-muted">Inicio</span><span>{{ proj.start_date }}</span>
+              <span class="text-muted">Fin estimado</span><span>{{ proj.end_date }}</span>
+              <span class="text-muted">Categoría</span><span>{{ proj.category }}</span>
+              <span class="text-muted">Tamaño</span><span>{{ proj.size or '—' }}</span>
+            </div>
+          </div>
+          <div class="info-card">
+            <h2>Cliente</h2>
+            <div class="assigned-prof">
+              <div class="avatar">{{ proj.client_name[:2].upper() }}</div>
+              <div><strong>{{ proj.client_name }}</strong></div>
+            </div>
+            <a href="{{ url_for('pro_mensajes') }}?with={{ proj.client_id }}" class="btn btn--outline btn--full mt-4">
+              💬 Enviar mensaje
+            </a>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+// Preview de imágenes antes de subir
+document.getElementById('updateImgInput')?.addEventListener('change', function() {
+  const preview = document.getElementById('updateImgPreview');
+  preview.innerHTML = '';
+  Array.from(this.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const div = document.createElement('div');
+      div.className = 'img-preview-item';
+      div.innerHTML = `<img src="${e.target.result}" alt="preview"/>`;
+      preview.appendChild(div);
+    };
+    reader.readAsDataURL(file);
+  });
+});
+</script>
+{% endblock %}

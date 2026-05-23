@@ -1,0 +1,153 @@
+{% macro chat_layout(convs, open_conv, open_id, user, send_url, list_url) %}
+<div class="messages-layout">
+
+  <!-- ── Lista de conversaciones ────────────────────────────────── -->
+  <div class="conv-list {% if open_conv %}conv-list--hidden-mobile{% endif %}">
+    <div class="conv-list__header"><h2>Mensajes</h2></div>
+    {% if convs %}
+    {% for c in convs %}
+    <a href="{{ list_url }}?with={{ c.other_id }}"
+       class="conv-item {% if open_id == c.other_id %}conv-item--active{% endif %}">
+      {% if c.other_avatar %}
+      <img src="{{ c.other_avatar }}" class="avatar avatar--sm avatar--photo" alt="{{ c.other_name }}"/>
+      {% else %}
+      <div class="avatar avatar--sm">{{ c.other_initials }}</div>
+      {% endif %}
+      <div class="conv-item__info">
+        <strong>{{ c.other_name }}</strong>
+        <p class="conv-item__last">
+          {% if c.messages and c.messages[-1].attachment_url and not c.messages[-1].text %}
+            {% if c.messages[-1].attachment_type == 'image' %}📷 Imagen
+            {% elif c.messages[-1].attachment_type == 'pdf' %}📄 PDF
+            {% else %}📎 Archivo{% endif %}
+          {% else %}
+            {{ c.last_message[:45] }}{% if c.last_message|length > 45 %}...{% endif %}
+          {% endif %}
+        </p>
+      </div>
+      {% if c.unread > 0 %}<span class="badge-count">{{ c.unread }}</span>{% endif %}
+    </a>
+    {% endfor %}
+    {% else %}
+    <div class="conv-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5" width="40"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <p>No tienes mensajes aún.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Panel del chat ─────────────────────────────────────────── -->
+  <div class="chat-panel {% if not open_conv %}chat-panel--empty{% endif %}">
+    {% if open_conv %}
+
+    <!-- Header -->
+    <div class="chat-header">
+      <a href="{{ list_url }}" class="chat-back">←</a>
+      {% if open_conv.other_avatar %}
+      <img src="{{ open_conv.other_avatar }}" class="avatar avatar--sm avatar--photo" alt=""/>
+      {% else %}
+      <div class="avatar avatar--sm">{{ open_conv.other_initials }}</div>
+      {% endif %}
+      <strong>{{ open_conv.other_name }}</strong>
+    </div>
+
+    <!-- Mensajes -->
+    <div class="chat-messages" id="chatMessages">
+      {% if not open_conv.messages %}
+      <div class="chat-start-hint">
+        <div class="chat-start-hint__avatar">
+          {% if open_conv.other_avatar %}
+          <img src="{{ open_conv.other_avatar }}" alt="{{ open_conv.other_name }}" class="avatar avatar--lg avatar--photo"/>
+          {% else %}
+          <div class="avatar avatar--lg">{{ open_conv.other_initials }}</div>
+          {% endif %}
+        </div>
+        <p class="chat-start-hint__name">{{ open_conv.other_name }}</p>
+        <p class="chat-start-hint__sub">Inicia la conversación enviando un mensaje</p>
+      </div>
+      {% endif %}
+      {% for msg in open_conv.messages %}
+      <div class="msg {% if msg.from_id == user.id %}msg--out{% else %}msg--in{% endif %}">
+        <div class="msg__bubble">
+          {# Texto del mensaje #}
+          {% if msg.text %}
+          <p class="msg__text">{{ msg.text }}</p>
+          {% endif %}
+          {# Adjunto #}
+          {% if msg.attachment_url %}
+            {% if msg.attachment_type == 'image' %}
+            <div class="msg__attachment msg__attachment--img">
+              <img src="{{ msg.attachment_url }}" alt="imagen"
+                   onclick="openLightbox('{{ msg.attachment_url }}')"/>
+            </div>
+            {% elif msg.attachment_type == 'pdf' %}
+            <a href="{{ msg.attachment_url }}" target="_blank" class="msg__attachment msg__attachment--file">
+              <span class="attach-icon">📄</span>
+              <span class="attach-name">Documento PDF</span>
+              <span class="attach-dl">↓ Abrir</span>
+            </a>
+            {% else %}
+            <a href="{{ msg.attachment_url }}" target="_blank" class="msg__attachment msg__attachment--file">
+              <span class="attach-icon">📎</span>
+              <span class="attach-name">Archivo adjunto</span>
+              <span class="attach-dl">↓ Descargar</span>
+            </a>
+            {% endif %}
+          {% endif %}
+        </div>
+        <div class="msg__time">
+          {{ msg.get('created_at', msg.get('timestamp',''))[-5:] if msg.get('created_at') or msg.get('timestamp') else '' }}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Área de vista previa de adjunto (sobre el input) -->
+    <div class="attach-preview" id="attachPreview" style="display:none">
+      <div class="attach-preview__inner" id="attachPreviewInner"></div>
+      <button type="button" class="attach-preview__remove" onclick="removeAttach()">✕ Quitar</button>
+    </div>
+
+    <!-- Input de mensaje + adjuntos -->
+    <form class="chat-input-form" method="POST" action="{{ send_url }}"
+          enctype="multipart/form-data" id="chatForm">
+      <input type="hidden" name="to_id" value="{{ open_conv.other_id }}"/>
+
+      <!-- Botón adjuntar -->
+      <label class="attach-btn" title="Adjuntar archivo">
+        <input type="file" name="adjunto" id="adjuntoInput"
+               accept="image/*,.pdf,.doc,.docx,.xlsx,.txt"
+               onchange="previewAttach(this)"/>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+          <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+        </svg>
+      </label>
+
+      <input type="text" name="text" id="chatTextInput"
+             placeholder="Escribe un mensaje..." autocomplete="off" class="chat-input"/>
+
+      <button type="submit" class="chat-send-btn" id="chatSendBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </form>
+
+    {% else %}
+    <div class="chat-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="1.5" width="64">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+      <p>Selecciona una conversación para empezar</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="this.style.display='none'">
+  <img id="lightboxImg" src="" alt=""/>
+</div>
+{% endmacro %}

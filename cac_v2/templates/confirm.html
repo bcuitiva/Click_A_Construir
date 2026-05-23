@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Confirmando cuenta — Click a Construir{% endblock %}
+{% block body %}
+<div class="login-page">
+  <main class="login-main">
+    <div class="login-card" style="text-align:center">
+      <div class="login-logo">
+        <img src="{{ url_for('static',filename='img/logo_login.png') }}" alt="Click a Construir"/>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+          <div class="alert alert--{{ cat }}">{{ msg }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <div id="confirmStatus">
+        <div class="confirm-spinner">
+          <div class="spinner"></div>
+          <p>Confirmando tu cuenta...</p>
+        </div>
+      </div>
+
+      <!-- Formulario oculto que envía el token al backend -->
+      <form id="confirmForm" method="POST" action="{{ url_for('confirm_callback') }}" style="display:none">
+        <input type="hidden" name="access_token"  id="accessToken"/>
+        <input type="hidden" name="refresh_token" id="refreshToken"/>
+      </form>
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Supabase pone los tokens en el fragmento (#) de la URL
+// Ejemplo: /confirm#access_token=xxx&refresh_token=yyy&type=signup
+(function() {
+  const hash   = window.location.hash.substring(1); // quitar el #
+  const params = new URLSearchParams(hash);
+  const access  = params.get("access_token");
+  const refresh = params.get("refresh_token");
+  const type    = params.get("type");       // "signup" o "recovery"
+  const error   = params.get("error_description");
+
+  if (error) {
+    document.getElementById("confirmStatus").innerHTML =
+      `<div class="alert alert--error">${error}</div>
+       <a href="/login" class="btn btn--primary" style="margin-top:1rem">Volver al inicio</a>`;
+    return;
+  }
+
+  if (!access) {
+    document.getElementById("confirmStatus").innerHTML =
+      `<div class="alert alert--error">Enlace inválido o expirado.</div>
+       <a href="/login" class="btn btn--primary" style="margin-top:1rem">Volver al inicio</a>`;
+    return;
+  }
+
+  // Si es recuperación de contraseña, redirigir a esa página
+  if (type === "recovery") {
+    window.location.href = "/reset-password#access_token=" + access;
+    return;
+  }
+
+  // Si es confirmación de registro, enviar al backend
+  document.getElementById("accessToken").value  = access;
+  document.getElementById("refreshToken").value = refresh || "";
+  document.getElementById("confirmForm").submit();
+})();
+</script>
+{% endblock %}

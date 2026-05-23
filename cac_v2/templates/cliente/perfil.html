@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% from "macros.html" import sidebar, topbar %}
+{% block title %}Mi perfil — Click a Construir{% endblock %}
+{% block body %}
+<div class="app-layout">
+  {{ sidebar("cliente", active_menu, user, unread) }}
+  <div class="main-wrapper">
+    {{ topbar(user, "Buscar...", url_for('cli_inicio'), unread) }}
+    <main class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}<div class="alert alert--{{ cat }}">{{ msg }}</div>{% endfor %}
+      {% endwith %}
+
+      <div class="profile-page">
+
+        <!-- Cabecera -->
+        <div class="profile-cover">
+          <div class="profile-cover__info">
+            {% if user_data.avatar_url %}
+            <img src="{{ user_data.avatar_url }}" alt="{{ user_data.name }}" class="profile-cover__avatar profile-cover__avatar--photo"/>
+            {% else %}
+            <div class="profile-cover__avatar">{{ user_data.name[:2].upper() }}</div>
+            {% endif %}
+            <div class="profile-cover__text">
+              <h1>{{ user_data.name }}</h1>
+              <span class="role-badge">Cliente</span>
+              {% if user_data.city %}
+              <p class="text-muted mt-2">📍 {{ user_data.city }}</p>
+              {% endif %}
+            </div>
+          </div>
+          <button class="btn btn--primary" onclick="openEditModal()">
+            ✏️ Editar perfil
+          </button>
+        </div>
+
+        <div class="two-col-layout mt-4">
+          <div class="col-main">
+
+            <!-- Bio -->
+            <div class="info-card">
+              <h2>Acerca de mí</h2>
+              {% if user_data.bio %}
+              <p>{{ user_data.bio }}</p>
+              {% else %}
+              <p class="text-muted">Agrega una descripción breve sobre ti.</p>
+              {% endif %}
+            </div>
+
+            <!-- Proyectos -->
+            <div class="info-card">
+              <div class="section-header-sm">
+                <h2>Proyectos publicados</h2>
+                <a href="{{ url_for('cli_proyectos') }}" class="link-btn">Ver todos →</a>
+              </div>
+              {% if my_projects %}
+              <div class="proj-list">
+                {% for p in my_projects %}
+                <a href="{{ url_for('cli_proyecto_detalle', proj_id=p.id) }}" class="proj-row proj-row--compact">
+                  <div>
+                    <strong>{{ p.name }}</strong>
+                    <p class="text-muted">{{ p.status }} · {{ p.progress }}% completado</p>
+                  </div>
+                  <span class="status-badge status-badge--{{ p.status|lower|replace(' ','-') }}">{{ p.status }}</span>
+                </a>
+                {% endfor %}
+              </div>
+              {% else %}
+              <p class="text-muted">Sin proyectos publicados aún.</p>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Tarjeta lateral -->
+          <div class="col-side">
+            <div class="info-card profile-preview">
+              {% if user_data.avatar_url %}
+              <img src="{{ user_data.avatar_url }}" alt="{{ user_data.name }}" class="avatar avatar--xl avatar--photo"/>
+              {% else %}
+              <div class="avatar avatar--xl">{{ user_data.name[:2].upper() }}</div>
+              {% endif %}
+              <h2>{{ user_data.name }}</h2>
+              <span class="role-badge">Cliente</span>
+              {% if user_data.bio %}<p class="mt-2 text-center">{{ user_data.bio }}</p>{% endif %}
+              <div class="contact-list mt-4">
+                {% if user_data.phone %}<div class="contact-item"><span>📞</span><span>{{ user_data.phone }}</span></div>{% endif %}
+                {% if user_data.city %}<div class="contact-item"><span>🏙️</span><span>{{ user_data.city }}</span></div>{% endif %}
+                <div class="contact-item"><span>📧</span><span>{{ user.email }}</span></div>
+                <div class="contact-item"><span>📁</span><span>{{ my_projects|length }} proyectos</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ── Modal de edición ── -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal modal--wide">
+    <div class="modal__header">
+      <h2>Editar perfil</h2>
+      <button class="modal__close" onclick="closeEditModal()">✕</button>
+    </div>
+    <form method="POST" action="{{ url_for('cli_perfil') }}" enctype="multipart/form-data" class="modal__form">
+
+      <div class="form-group avatar-upload-group">
+        <label>Foto de perfil</label>
+        <div class="avatar-upload">
+          {% if user_data.avatar_url %}
+          <img src="{{ user_data.avatar_url }}" alt="Avatar" class="avatar-upload__preview" id="avatarPreview"/>
+          {% else %}
+          <div class="avatar avatar--xl" id="avatarFallback">{{ user_data.name[:2].upper() }}</div>
+          <img src="" alt="" class="avatar-upload__preview" id="avatarPreview" style="display:none"/>
+          {% endif %}
+          <label class="avatar-upload__btn">
+            <input type="file" name="avatar" accept="image/*" id="avatarInput"/>
+            📷 Cambiar foto
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Nombre completo</label>
+        <input type="text" name="name" value="{{ user_data.name }}" required/>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="text" name="phone" value="{{ user_data.phone or '' }}" placeholder="314 555 0000"/>
+        </div>
+        <div class="form-group">
+          <label>Ciudad</label>
+          <input type="text" name="city" value="{{ user_data.city or '' }}" placeholder="Bogotá"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Descripción breve</label>
+        <textarea name="bio" rows="3" placeholder="Cuéntanos sobre ti...">{{ user_data.bio or '' }}</textarea>
+      </div>
+
+      <div class="modal__footer">
+        <button type="button" class="btn btn--ghost" onclick="closeEditModal()">Cancelar</button>
+        <button type="submit" class="btn btn--primary">Guardar cambios</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function openEditModal() {
+  document.getElementById('editModal').classList.add('modal-overlay--open');
+}
+function closeEditModal() {
+  document.getElementById('editModal').classList.remove('modal-overlay--open');
+}
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') closeEditModal();
+});
+document.getElementById('avatarInput')?.addEventListener('change', function() {
+  const file = this.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const preview = document.getElementById('avatarPreview');
+    const fallback = document.getElementById('avatarFallback');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    if(fallback) fallback.style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+});
+</script>
+{% endblock %}

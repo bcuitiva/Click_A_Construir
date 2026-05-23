@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Iniciar sesión — Click a Construir{% endblock %}
+{% block body %}
+<div class="login-page">
+  <main class="login-main">
+    <div class="login-card">
+      <div class="login-logo">
+        <img src="{{ url_for('static',filename='img/logo_login.png') }}" alt="Click a Construir"/>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn {% if tab!='register' %}tab-btn--active{% endif %}" data-tab="login">Iniciar sesión</button>
+        <button class="tab-btn {% if tab=='register' %}tab-btn--active{% endif %}" data-tab="register">Registrarse</button>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+          <div class="alert alert--{{ cat }}">{{ msg }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <!-- ── LOGIN ─────────────────────────────────────────────── -->
+      <div class="tab-panel {% if tab!='register' %}tab-panel--active{% endif %}" id="panel-login">
+        <form method="POST" action="{{ url_for('login') }}" class="auth-form">
+          <div class="form-group">
+            <label>Correo electrónico</label>
+            <input type="email" name="email" placeholder="tu@correo.com" required autocomplete="email"/>
+          </div>
+          <div class="form-group">
+            <label>Contraseña</label>
+            <div class="input-eye">
+              <input type="password" name="password" id="loginPw" placeholder="••••••••" required autocomplete="current-password"/>
+              <button type="button" class="eye-btn" onclick="togglePw('loginPw', this)">🔒</button>
+            </div>
+          </div>
+          <div class="form-forgot"><a href="{{ url_for('forgot_password') }}">¿Olvidaste tu contraseña?</a></div>
+          <button type="submit" class="btn btn--primary btn--full">Iniciar sesión</button>
+        </form>
+        <p class="auth-switch">¿No tienes cuenta? <button class="link-btn" data-tab="register">Regístrate</button></p>
+      </div>
+
+      <!-- ── REGISTRO ──────────────────────────────────────────── -->
+      <div class="tab-panel {% if tab=='register' %}tab-panel--active{% endif %}" id="panel-register">
+        <form method="POST" action="{{ url_for('register') }}" class="auth-form" id="registerForm">
+          <div class="form-group">
+            <label>Nombre completo</label>
+            <input type="text" name="name" id="regName" placeholder="Juan Pérez" required autocomplete="name"/>
+            <span class="field-hint">Nombre y apellido, solo letras.</span>
+          </div>
+          <div class="form-group">
+            <label>Correo electrónico</label>
+            <input type="email" name="email" placeholder="tu@correo.com" required autocomplete="email"/>
+          </div>
+          <div class="form-group">
+            <label>Contraseña</label>
+            <div class="input-eye">
+              <input type="password" name="password" id="regPw"
+                     placeholder="Mín. 8 caracteres" required autocomplete="new-password"
+                     oninput="checkStrength(this.value)"/>
+              <button type="button" class="eye-btn" onclick="togglePw('regPw', this)">🔒</button>
+            </div>
+            <!-- Barra de seguridad -->
+            <div class="pw-strength" id="pwStrength">
+              <div class="pw-strength__bar">
+                <div class="pw-strength__fill" id="pwFill"></div>
+              </div>
+              <span class="pw-strength__label" id="pwLabel"></span>
+            </div>
+            <ul class="pw-rules" id="pwRules">
+              <li class="rule" id="r-len">  Mínimo 8 caracteres</li>
+              <li class="rule" id="r-upper">Una letra mayúscula</li>
+              <li class="rule" id="r-lower">Una letra minúscula</li>
+              <li class="rule" id="r-num">  Un número</li>
+              <li class="rule" id="r-sym">  Un símbolo (!@#$%...)</li>
+            </ul>
+          </div>
+          <div class="form-group">
+            <label>Confirmar contraseña</label>
+            <div class="input-eye">
+              <input type="password" name="confirm_password" id="regPwConfirm"
+                     placeholder="Repite tu contraseña" required autocomplete="new-password"
+                     oninput="checkMatch()"/>
+              <button type="button" class="eye-btn" onclick="togglePw('regPwConfirm', this)">🔒</button>
+            </div>
+            <span class="field-hint" id="matchHint"></span>
+          </div>
+          <div class="form-group">
+            <label>Tipo de cuenta</label>
+            <div class="role-selector">
+              <button type="button" class="role-btn" data-role="cliente">🏠 Cliente</button>
+              <button type="button" class="role-btn role-btn--active" data-role="profesional">🔧 Profesional</button>
+            </div>
+            <input type="hidden" id="roleInput" name="role" value="profesional"/>
+          </div>
+          <button type="submit" class="btn btn--primary btn--full" id="submitBtn">Crear cuenta</button>
+        </form>
+        <p class="auth-switch">¿Ya tienes cuenta? <button class="link-btn" data-tab="login">Inicia sesión</button></p>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// ── Mostrar/ocultar contraseña ────────────────────────────────────────
+function togglePw(id, btn) {
+  const inp = document.getElementById(id);
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    btn.textContent = '🔓';
+  } else {
+    inp.type = 'password';
+    btn.textContent = '🔒';
+  }
+}
+
+// ── Verificar fortaleza de contraseña ────────────────────────────────
+function checkStrength(pw) {
+  const rules = {
+    'r-len':   pw.length >= 8,
+    'r-upper': /[A-Z]/.test(pw),
+    'r-lower': /[a-z]/.test(pw),
+    'r-num':   /\d/.test(pw),
+    'r-sym':   /[!@#$%^&*()\-_=+\[\]{};:'",.<>?\/\\|`~]/.test(pw),
+  };
+
+  // Marcar reglas
+  Object.entries(rules).forEach(([id, ok]) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.classList.toggle('rule--ok', ok);
+      el.classList.toggle('rule--fail', pw.length > 0 && !ok);
+    }
+  });
+
+  // Calcular nivel
+  const score = Object.values(rules).filter(Boolean).length;
+  const fill  = document.getElementById('pwFill');
+  const label = document.getElementById('pwLabel');
+  const str   = document.getElementById('pwStrength');
+  if (!fill || !label) return;
+
+  str.style.display = pw.length > 0 ? 'block' : 'none';
+  const levels = [
+    { pct: '20%', color: '#ef4444', text: 'Muy débil' },
+    { pct: '40%', color: '#f97316', text: 'Débil' },
+    { pct: '60%', color: '#eab308', text: 'Regular' },
+    { pct: '80%', color: '#84cc16', text: 'Fuerte' },
+    { pct: '100%',color: '#22c55e', text: 'Muy fuerte' },
+  ];
+  const lv = levels[score - 1] || levels[0];
+  fill.style.width      = lv.pct;
+  fill.style.background = lv.color;
+  label.textContent     = lv.text;
+  label.style.color     = lv.color;
+
+  checkMatch();
+}
+
+// ── Verificar que las contraseñas coincidan ───────────────────────────
+function checkMatch() {
+  const pw  = document.getElementById('regPw')?.value || '';
+  const cf  = document.getElementById('regPwConfirm')?.value || '';
+  const hint = document.getElementById('matchHint');
+  if (!hint || !cf) return;
+  if (cf.length === 0) { hint.textContent = ''; return; }
+  if (pw === cf) {
+    hint.textContent = '✓ Las contraseñas coinciden';
+    hint.style.color = '#22c55e';
+  } else {
+    hint.textContent = '✗ Las contraseñas no coinciden';
+    hint.style.color = '#ef4444';
+  }
+}
+</script>
+{% endblock %}

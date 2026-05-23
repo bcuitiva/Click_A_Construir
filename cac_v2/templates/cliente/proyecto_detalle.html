@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% from "macros.html" import sidebar, topbar %}
+{% block title %}{{ proj.name }} — Click a Construir{% endblock %}
+{% block body %}
+<div class="app-layout">
+  {{ sidebar("cliente", active_menu, user, unread) }}
+  <div class="main-wrapper">
+    {{ topbar(user, "Buscar proyectos...", url_for('cli_proyectos'), unread) }}
+    <main class="content">
+      <a href="{{ url_for('cli_proyectos') }}" class="back-link">← Volver a proyectos</a>
+
+      <div class="proj-detail-header">
+        <div>
+          <h1>{{ proj.name }}</h1>
+          <p class="text-muted">{{ proj.category }} · 📍 {{ proj.location }} · {{ proj.budget|format_cop }} COP</p>
+        </div>
+        <span class="status-badge status-badge--{{ proj.status|lower|replace(' ','-') }} status-badge--lg">{{ proj.status }}</span>
+      </div>
+
+      <!-- Galería de fotos del proyecto -->
+      {% if proj.images %}
+      <div class="info-card">
+        <h2>Fotos del proyecto</h2>
+        <div class="img-gallery">
+          {% for img in proj.images %}
+          <div class="img-gallery__item" onclick="openLightbox('{{ img }}')">
+            <img src="{{ img }}" alt="Foto del proyecto"/>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Progreso -->
+      <div class="info-card">
+        <div class="progress-header">
+          <h2>Progreso general</h2>
+          <span class="progress-pct">{{ proj.progress }}%</span>
+        </div>
+        <div class="progress-bar progress-bar--lg">
+          <div class="progress-bar__fill" style="width:{{ proj.progress }}%"></div>
+        </div>
+        <p class="text-muted mt-2">
+          {{ proj.tasks|selectattr('done')|list|length }} de {{ proj.tasks|length }} tareas completadas
+        </p>
+      </div>
+
+      <div class="two-col-layout">
+        <div class="col-main">
+
+          <!-- Tareas -->
+          <div class="info-card">
+            <h2>Tareas del proyecto</h2>
+            {% if proj.tasks %}
+            <ul class="task-list">
+              {% for t in proj.tasks %}
+              <li class="task-item {% if t.done %}task-item--done{% endif %}">
+                <span class="task-check">{% if t.done %}✓{% else %}○{% endif %}</span>
+                <span class="task-text">{{ t.text }}</span>
+                {% if t.date %}<span class="task-date">{{ t.date }}</span>{% endif %}
+              </li>
+              {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-muted">Sin tareas asignadas aún.</p>
+            {% endif %}
+          </div>
+
+          <!-- Avances con imágenes -->
+          <div class="info-card">
+            <h2>Avances publicados por el profesional</h2>
+            {% if proj.updates %}
+            <div class="timeline">
+              {% for upd in proj.updates|reverse %}
+              <div class="timeline-item">
+                <div class="timeline-dot timeline-dot--orange"></div>
+                <div class="timeline-content">
+                  <div class="timeline-meta">
+                    <strong>{{ upd.author }}</strong>
+                    <span class="text-muted">{{ upd.date }}</span>
+                  </div>
+                  <p>{{ upd.text }}</p>
+                  {% if upd.images %}
+                  <div class="img-gallery img-gallery--sm mt-2">
+                    {% for img in upd.images %}
+                    <div class="img-gallery__item" onclick="openLightbox('{{ img }}')">
+                      <img src="{{ img }}" alt="Foto del avance"/>
+                    </div>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted">El profesional aún no ha publicado avances.</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="col-side">
+          <div class="info-card">
+            <h2>Detalles</h2>
+            <div class="detail-grid">
+              <span class="text-muted">Inicio</span><span>{{ proj.start_date }}</span>
+              <span class="text-muted">Fin estimado</span><span>{{ proj.end_date }}</span>
+              <span class="text-muted">Presupuesto</span><span>{{ proj.budget|format_cop }} COP</span>
+              <span class="text-muted">Tamaño</span><span>{{ proj.size or '—' }}</span>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <h2>Profesional asignado</h2>
+            {% if proj.professional_name %}
+            <div class="assigned-prof">
+              <div class="avatar">{{ proj.professional_name[:2].upper() }}</div>
+              <div>
+                <strong>{{ proj.professional_name }}</strong>
+                <p class="text-muted">En tu proyecto</p>
+              </div>
+            </div>
+            <a href="{{ url_for('cli_mensajes') }}?with={{ proj.professional_id }}" class="btn btn--outline btn--full mt-4">
+              💬 Enviar mensaje
+            </a>
+            {% else %}
+            <p class="text-muted">Aún no asignado. Los profesionales pueden ver y cotizar tu proyecto.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Lightbox para ver imágenes grandes -->
+<div class="lightbox" id="lightbox" onclick="this.style.display='none'">
+  <img id="lightboxImg" src="" alt=""/>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function openLightbox(src) {
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightbox').style.display = 'flex';
+}
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') document.getElementById('lightbox').style.display = 'none';
+});
+</script>
+{% endblock %}

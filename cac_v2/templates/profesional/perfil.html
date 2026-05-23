@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+{% from "macros.html" import sidebar, topbar %}
+{% block title %}Mi perfil — Click a Construir{% endblock %}
+{% block body %}
+<div class="app-layout">
+  {{ sidebar("profesional", active_menu, user, unread) }}
+  <div class="main-wrapper">
+    {{ topbar(user, "Buscar...", url_for('pro_inicio'), unread) }}
+    <main class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}<div class="alert alert--{{ cat }}">{{ msg }}</div>{% endfor %}
+      {% endwith %}
+
+      <!-- ── Vista previa del perfil (siempre visible) ── -->
+      <div class="profile-page">
+
+        <!-- Cabecera del perfil -->
+        <div class="profile-cover">
+          <div class="profile-cover__info">
+            {% if user_data.avatar_url %}
+            <img src="{{ user_data.avatar_url }}" alt="{{ user_data.name }}" class="profile-cover__avatar profile-cover__avatar--photo"/>
+            {% else %}
+            <div class="profile-cover__avatar">{{ user_data.name[:2].upper() }}</div>
+            {% endif %}
+            <div class="profile-cover__text">
+              <h1>{{ user_data.name }}</h1>
+              {% if user_data.specialty %}
+              <span class="role-badge role-badge--pro">{{ user_data.specialty }}</span>
+              {% endif %}
+              {% if user_data.city %}
+              <p class="text-muted mt-2">📍 {{ user_data.city }}</p>
+              {% endif %}
+            </div>
+          </div>
+          <button class="btn btn--primary" onclick="openEditModal()">
+            ✏️ Editar perfil
+          </button>
+        </div>
+
+        <div class="two-col-layout mt-4">
+          <div class="col-main">
+
+            <!-- Bio -->
+            <div class="info-card">
+              <h2>Acerca de mí</h2>
+              {% if user_data.bio %}
+              <p>{{ user_data.bio }}</p>
+              {% else %}
+              <p class="text-muted">Agrega una descripción sobre tu experiencia y habilidades.</p>
+              {% endif %}
+            </div>
+
+            <!-- Redes sociales -->
+            {% if user_data.instagram or user_data.facebook or user_data.whatsapp or user_data.website %}
+            <div class="info-card">
+              <h2>Redes sociales</h2>
+              <div class="social-links">
+                {% if user_data.instagram %}
+                <a href="https://instagram.com/{{ user_data.instagram.lstrip('@') }}" target="_blank" class="social-link social-link--instagram">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                  <span>{{ user_data.instagram }}</span>
+                </a>
+                {% endif %}
+                {% if user_data.facebook %}
+                <a href="{{ user_data.facebook if user_data.facebook.startswith('http') else 'https://facebook.com/' + user_data.facebook }}" target="_blank" class="social-link social-link--facebook">
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                  <span>{{ user_data.facebook }}</span>
+                </a>
+                {% endif %}
+                {% if user_data.whatsapp %}
+                <a href="https://wa.me/57{{ user_data.whatsapp | replace(' ','') | replace('+','') | replace('57','',1) }}" target="_blank" class="social-link social-link--whatsapp">
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+                  <span>{{ user_data.whatsapp }}</span>
+                </a>
+                {% endif %}
+                {% if user_data.website %}
+                <a href="{{ user_data.website if user_data.website.startswith('http') else 'https://' + user_data.website }}" target="_blank" class="social-link social-link--website">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  <span>{{ user_data.website }}</span>
+                </a>
+                {% endif %}
+              </div>
+            </div>
+            {% endif %}
+
+            <!-- Proyectos completados -->
+            <div class="info-card">
+              <h2>Proyectos completados</h2>
+              {% if completed_projects %}
+              <div class="timeline">
+                {% for p in completed_projects %}
+                <div class="timeline-item">
+                  <div class="timeline-dot timeline-dot--green"></div>
+                  <div class="timeline-content">
+                    <strong>{{ p.name }}</strong>
+                    <span class="text-muted">📍 {{ p.location }} · {{ p.end_date }}</span>
+                    <span class="budget-tag">{{ p.budget|format_cop }} COP</span>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+              {% else %}
+              <p class="text-muted">Aún no tienes proyectos completados.</p>
+              {% endif %}
+            </div>
+
+            <!-- Reseñas -->
+            <div class="info-card">
+              <h2>Reseñas de clientes</h2>
+              {% if my_reviews %}
+              {% for r in my_reviews %}
+              <div class="review-item">
+                <div class="review-item__header">
+                  <div class="avatar avatar--sm">{{ r.client_name[:2].upper() }}</div>
+                  <strong>{{ r.client_name }}</strong>
+                  <span class="text-muted ml-auto">{{ r.date }}</span>
+                </div>
+                <div class="star-row-sm">
+                  {% for i in range(5) %}
+                  <span class="star {% if i < r.rating|int %}star--filled{% endif %}">★</span>
+                  {% endfor %}
+                  <span class="text-muted">{{ r.rating }}/5</span>
+                </div>
+                <p>{{ r.comment }}</p>
+              </div>
+              {% endfor %}
+              {% else %}
+              <p class="text-muted">Aún no tienes reseñas.</p>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Tarjeta lateral -->
+          <div class="col-side">
+            <div class="info-card profile-preview">
+              {% if user_data.avatar_url %}
+              <img src="{{ user_data.avatar_url }}" alt="{{ user_data.name }}" class="avatar avatar--xl avatar--photo"/>
+              {% else %}
+              <div class="avatar avatar--xl">{{ user_data.name[:2].upper() }}</div>
+              {% endif %}
+              <h2>{{ user_data.name }}</h2>
+              {% if user_data.specialty %}
+              <span class="role-badge role-badge--pro">{{ user_data.specialty }}</span>
+              {% endif %}
+
+              {% if user_data.rating_avg %}
+              <div class="rating-display">
+                <div class="star-row-lg">
+                  {% set rating = user_data.rating_avg %}
+                  {% for i in range(5) %}
+                    {% if i < rating|int %}<span class="star star--filled star--lg">★</span>
+                    {% elif (rating - i) >= 0.5 %}<span class="star star--half star--lg">★</span>
+                    {% else %}<span class="star star--lg">★</span>{% endif %}
+                  {% endfor %}
+                </div>
+                <p class="rating-number">{{ user_data.rating_avg }} / 5</p>
+                <p class="text-muted">{{ user_data.reviews_count }} reseñas</p>
+              </div>
+              {% endif %}
+
+              <div class="contact-list mt-4">
+                {% if user_data.phone %}<div class="contact-item"><span>📞</span><span>{{ user_data.phone }}</span></div>{% endif %}
+                {% if user_data.city %}<div class="contact-item"><span>🏙️</span><span>{{ user_data.city }}</span></div>{% endif %}
+                <div class="contact-item"><span>📧</span><span>{{ user.email }}</span></div>
+                <div class="contact-item"><span>✅</span><span>{{ completed_projects|length }} proyectos</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ── Modal de edición ── -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal modal--wide">
+    <div class="modal__header">
+      <h2>Editar perfil</h2>
+      <button class="modal__close" onclick="closeEditModal()">✕</button>
+    </div>
+    <form method="POST" action="{{ url_for('pro_perfil') }}" enctype="multipart/form-data" class="modal__form">
+
+      <!-- Foto de perfil -->
+      <div class="form-group avatar-upload-group">
+        <label>Foto de perfil</label>
+        <div class="avatar-upload">
+          {% if user_data.avatar_url %}
+          <img src="{{ user_data.avatar_url }}" alt="Avatar" class="avatar-upload__preview" id="avatarPreview"/>
+          {% else %}
+          <div class="avatar avatar--xl" id="avatarFallback">{{ user_data.name[:2].upper() }}</div>
+          <img src="" alt="" class="avatar-upload__preview" id="avatarPreview" style="display:none"/>
+          {% endif %}
+          <label class="avatar-upload__btn">
+            <input type="file" name="avatar" accept="image/*" id="avatarInput"/>
+            📷 Cambiar foto
+          </label>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nombre completo</label>
+          <input type="text" name="name" value="{{ user_data.name }}" required/>
+        </div>
+        <div class="form-group">
+          <label>Especialidad</label>
+          <input type="text" name="specialty" value="{{ user_data.specialty or '' }}" placeholder="Ej: Electricista"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="text" name="phone" value="{{ user_data.phone or '' }}" placeholder="314 555 0000"/>
+        </div>
+        <div class="form-group">
+          <label>Ciudad</label>
+          <input type="text" name="city" value="{{ user_data.city or '' }}" placeholder="Bogotá"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Descripción y habilidades</label>
+        <textarea name="bio" rows="3" placeholder="Describe tu experiencia, habilidades y certificaciones...">{{ user_data.bio or '' }}</textarea>
+      </div>
+
+      <!-- Redes sociales -->
+      <div class="form-section-title">Redes sociales <span class="text-muted">(opcional)</span></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Instagram</label>
+          <div class="input-prefix">
+            <span>@</span>
+            <input type="text" name="instagram" value="{{ user_data.instagram or '' }}" placeholder="tu_usuario"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Facebook</label>
+          <div class="input-prefix">
+            <span>fb/</span>
+            <input type="text" name="facebook" value="{{ user_data.facebook or '' }}" placeholder="tu.pagina"/>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>WhatsApp</label>
+          <div class="input-prefix">
+            <span>+57</span>
+            <input type="text" name="whatsapp" value="{{ user_data.whatsapp or '' }}" placeholder="314 555 0000"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Sitio web</label>
+          <input type="text" name="website" value="{{ user_data.website or '' }}" placeholder="www.mipagina.com"/>
+        </div>
+      </div>
+
+      <div class="modal__footer">
+        <button type="button" class="btn btn--ghost" onclick="closeEditModal()">Cancelar</button>
+        <button type="submit" class="btn btn--primary">Guardar cambios</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function openEditModal() {
+  document.getElementById('editModal').classList.add('modal-overlay--open');
+}
+function closeEditModal() {
+  document.getElementById('editModal').classList.remove('modal-overlay--open');
+}
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') closeEditModal();
+});
+
+document.getElementById('avatarInput')?.addEventListener('change', function() {
+  const file = this.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const preview = document.getElementById('avatarPreview');
+    const fallback = document.getElementById('avatarFallback');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    if(fallback) fallback.style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+});
+
+// Abrir modal si hay errores de validación al volver
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}openEditModal();{% endif %}
+{% endwith %}
+</script>
+{% endblock %}

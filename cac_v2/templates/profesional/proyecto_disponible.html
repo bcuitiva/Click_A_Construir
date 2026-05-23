@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% from "macros.html" import sidebar, topbar %}
+{% block title %}{{ proj.name }} — Click a Construir{% endblock %}
+{% block body %}
+<div class="app-layout">
+  {{ sidebar("profesional", active_menu, user, unread) }}
+  <div class="main-wrapper">
+    {{ topbar(user, "Buscar...", url_for('pro_inicio'), unread) }}
+    <main class="content">
+      <a href="{{ url_for('pro_inicio') }}" class="back-link">← Volver a proyectos</a>
+      <h1>{{ proj.name }}</h1>
+      <div class="two-col-layout">
+        <div class="col-main">
+          <div class="info-card">
+            <h2>Descripción</h2>
+            <p>{{ proj.description }}</p>
+          </div>
+          <div class="info-card">
+            <h2>Detalles</h2>
+            <div class="detail-grid">
+              <span class="text-muted">Categoría</span><span>{{ proj.category }}</span>
+              <span class="text-muted">Tamaño</span><span>{{ proj.size or '—' }}</span>
+              <span class="text-muted">Ubicación</span><span>{{ proj.location }}</span>
+              <span class="text-muted">Presupuesto</span><span>{{ proj.budget|format_cop }} COP</span>
+              <span class="text-muted">Inicio</span><span>{{ proj.start_date }}</span>
+              <span class="text-muted">Fin estimado</span><span>{{ proj.end_date }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-side">
+          <div class="info-card">
+            <h2>Cliente</h2>
+            <div class="assigned-prof">
+              <div class="avatar">{{ proj.client_name[:2].upper() }}</div>
+              <div><strong>{{ proj.client_name }}</strong><p class="text-muted">Publicado {{ proj.created_at }}</p></div>
+            </div>
+            <a href="{{ url_for('pro_mensajes') }}?with={{ proj.client_id }}" class="btn btn--outline btn--full mt-4">
+              💬 Enviar mensaje al cliente
+            </a>
+          </div>
+          <div class="info-card">
+            <h2>Enviar cotización</h2>
+            <p class="text-muted mb-3">Adjunta tu propuesta económica en PDF o Word.</p>
+            <div class="upload-zone" id="uploadZone">
+              <input type="file" id="fileInput" accept=".pdf,.doc,.docx" style="display:none"/>
+              <label for="fileInput" class="upload-zone__label">
+                <span>📎</span> Seleccionar archivo
+              </label>
+              <p id="fileName" class="text-muted mt-2"></p>
+            </div>
+            <button class="btn btn--primary btn--full mt-4" onclick="alert('Cotización enviada al cliente.')">
+              Enviar cotización
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+  document.getElementById('fileInput').addEventListener('change', function(){
+    document.getElementById('fileName').textContent = this.files[0]?.name || '';
+  });
+</script>
+{% endblock %}

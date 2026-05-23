@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "macros.html" import sidebar, topbar %}
+{% block title %}Mis proyectos — Click a Construir{% endblock %}
+{% block body %}
+<div class="app-layout">
+  {{ sidebar("profesional", active_menu, user, unread) }}
+  <div class="main-wrapper">
+    {{ topbar(user, "Buscar mis proyectos...", url_for('pro_proyectos'), unread) }}
+    <main class="content">
+      <div class="page-header"><h1>Mis proyectos activos</h1></div>
+
+      <form method="GET" action="{{ url_for('pro_proyectos') }}" class="filter-bar">
+        <select name="status" onchange="this.form.submit()">
+          <option value="">Todos</option>
+          <option value="En progreso" {% if status_f=='En progreso' %}selected{% endif %}>En progreso</option>
+          <option value="Pendiente"   {% if status_f=='Pendiente' %}selected{% endif %}>Pendiente</option>
+          <option value="Completado"  {% if status_f=='Completado' %}selected{% endif %}>Completado</option>
+        </select>
+        <input type="hidden" name="q" value="{{ q }}"/>
+        <button type="submit" class="btn btn--primary">Filtrar</button>
+      </form>
+
+      <div class="proj-list">
+        {% for p in projects %}
+        <a href="{{ url_for('pro_proyecto_gestion', proj_id=p.id) }}" class="proj-row">
+          <div class="proj-row__main">
+            <div class="proj-row__header">
+              <h3>{{ p.name }}</h3>
+              <span class="status-badge status-badge--{{ p.status|lower|replace(' ','-') }}">{{ p.status }}</span>
+            </div>
+            <p class="text-muted">👤 {{ p.client_name }} · 📍 {{ p.location }} · {{ p.budget|format_cop }} COP</p>
+            <div class="progress-wrap">
+              <div class="progress-bar">
+                <div class="progress-bar__fill" style="width:{{ p.progress }}%"></div>
+              </div>
+              <span class="progress-label">{{ p.progress }}%</span>
+            </div>
+          </div>
+          <div class="proj-row__arrow">→</div>
+        </a>
+        {% else %}
+        <div class="empty-card"><p>No tienes proyectos asignados aún.</p></div>
+        {% endfor %}
+      </div>
+    </main>
+  </div>
+</div>
+{% endblock %}

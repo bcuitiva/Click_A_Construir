@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% from "macros.html" import sidebar, topbar %}
+{% block title %}Proyectos disponibles — Click a Construir{% endblock %}
+{% block body %}
+<div class="app-layout">
+  {{ sidebar("profesional", active_menu, user, unread) }}
+  <div class="main-wrapper">
+    {{ topbar(user, "Buscar proyectos disponibles...", url_for('pro_inicio'), unread) }}
+    <main class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}<div class="alert alert--{{ cat }}">{{ msg }}</div>{% endfor %}
+      {% endwith %}
+
+      <!-- Filtros -->
+      <form method="GET" action="{{ url_for('pro_inicio') }}" class="filter-bar">
+        <select name="category" onchange="this.form.submit()">
+          <option value="">Todas las categorías</option>
+          {% for c in categories %}
+          <option value="{{ c }}" {% if category==c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+        <input type="text" name="city" placeholder="Ciudad o zona" value="{{ city }}"/>
+        <input type="number" name="max_budget" placeholder="Presupuesto máx. COP" value="{{ max_budget }}"/>
+        <input type="hidden" name="q" value="{{ q }}"/>
+        <button type="submit" class="btn btn--primary">Filtrar</button>
+        {% if q or category or city or max_budget %}
+        <a href="{{ url_for('pro_inicio') }}" class="btn btn--ghost">Limpiar</a>
+        {% endif %}
+      </form>
+
+      <h1>Proyectos disponibles <span class="count-badge">{{ projects|length }}</span></h1>
+
+      <div class="avail-proj-list">
+        {% for p in projects %}
+        <a href="{{ url_for('pro_proyecto_detalle', proj_id=p.id) }}" class="avail-proj-card">
+          <div class="avail-proj-card__body">
+            <div class="avail-proj-card__header">
+              <h3>{{ p.name }}</h3>
+              <span class="category-tag">{{ p.category }}</span>
+            </div>
+            <p class="text-muted mt-1">{{ p.description[:120] }}{% if p.description|length > 120 %}...{% endif %}</p>
+            <div class="avail-proj-card__meta">
+              <span>📍 {{ p.location }}</span>
+              <span>💰 {{ p.budget|format_cop }} COP</span>
+              <span>👤 {{ p.client_name }}</span>
+              <span>📅 {{ p.start_date }}</span>
+            </div>
+          </div>
+          <div class="avail-proj-card__cta">Ver detalles →</div>
+        </a>
+        {% else %}
+        <div class="empty-card">
+          <p>No hay proyectos disponibles en este momento.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </main>
+  </div>
+</div>
+{% endblock %}

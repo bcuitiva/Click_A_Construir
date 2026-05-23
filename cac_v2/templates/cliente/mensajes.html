@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "macros.html" import sidebar, topbar %}
+{% from "chat_macro.html" import chat_layout %}
+{% block title %}Mensajes — Click a Construir{% endblock %}
+{% block body %}
+<div class="app-layout">
+  {{ sidebar("cliente", active_menu, user, unread) }}
+  <div class="main-wrapper">
+    {{ topbar(user, "Buscar...", url_for('cli_inicio'), unread) }}
+    <main class="content content--messages">
+      {{ chat_layout(convs, open_conv, open_id, user,
+                     url_for('cli_enviar_mensaje'),
+                     url_for('cli_mensajes')) }}
+    </main>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}

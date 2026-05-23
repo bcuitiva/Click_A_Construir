@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% from "macros.html" import sidebar, topbar %}
+{% block title %}Mis proyectos — Click a Construir{% endblock %}
+{% block body %}
+<div class="app-layout">
+  {{ sidebar("cliente", active_menu, user, unread) }}
+  <div class="main-wrapper">
+    {{ topbar(user, "Buscar proyectos...", url_for('cli_proyectos'), unread) }}
+    <main class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}<div class="alert alert--{{ cat }}">{{ msg }}</div>{% endfor %}
+      {% endwith %}
+
+      <div class="page-header">
+        <h1>Mis proyectos</h1>
+        <button class="btn btn--primary" id="fabBtn">+ Nuevo proyecto</button>
+      </div>
+
+      <form method="GET" action="{{ url_for('cli_proyectos') }}" class="filter-bar">
+        <select name="status" onchange="this.form.submit()">
+          <option value="">Todos los estados</option>
+          <option value="Pendiente"   {% if status_f=='Pendiente' %}selected{% endif %}>Pendiente</option>
+          <option value="En progreso" {% if status_f=='En progreso' %}selected{% endif %}>En progreso</option>
+          <option value="Completado"  {% if status_f=='Completado' %}selected{% endif %}>Completado</option>
+        </select>
+        <input type="hidden" name="q" value="{{ q }}"/>
+        <button type="submit" class="btn btn--primary">Filtrar</button>
+        {% if q or status_f %}<a href="{{ url_for('cli_proyectos') }}" class="btn btn--ghost">Limpiar</a>{% endif %}
+      </form>
+
+      <div class="proj-list">
+        {% for p in projects %}
+        <a href="{{ url_for('cli_proyecto_detalle', proj_id=p.id) }}" class="proj-row">
+          {% if p.images %}
+          <div class="proj-row__thumb">
+            <img src="{{ p.images[0] }}" alt="{{ p.name }}"/>
+          </div>
+          {% endif %}
+          <div class="proj-row__main">
+            <div class="proj-row__header">
+              <h3>{{ p.name }}</h3>
+              <span class="status-badge status-badge--{{ p.status|lower|replace(' ','-') }}">{{ p.status }}</span>
+            </div>
+            <p class="text-muted">📍 {{ p.location }} &nbsp;·&nbsp; {{ p.budget|format_cop }} COP &nbsp;·&nbsp; {{ p.category }}</p>
+            <div class="progress-wrap">
+              <div class="progress-bar">
+                <div class="progress-bar__fill" style="width:{{ p.progress }}%"></div>
+              </div>
+              <span class="progress-label">{{ p.progress }}% completado</span>
+            </div>
+          </div>
+          <div class="proj-row__arrow">→</div>
+        </a>
+        {% else %}
+        <div class="empty-card"><p>No tienes proyectos aún. ¡Crea tu primer proyecto!</p></div>
+        {% endfor %}
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Modal crear proyecto -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal__header">
+      <h2>Crear nuevo proyecto</h2>
+      <button class="modal__close" id="modalClose">✕</button>
+    </div>
+    <form method="POST" action="{{ url_for('cli_crear_proyecto') }}" enctype="multipart/form-data" class="modal__form">
+      <div class="form-group">
+        <label>Nombre del proyecto</label>
+        <input type="text" name="name" placeholder="Ej: Renovación de cocina" required/>
+      </div>
+      <div class="form-group">
+        <label>Descripción</label>
+        <textarea name="description" rows="3" placeholder="Describe los detalles..." required></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Categoría</label>
+          <select name="category">
+            <option>Remodelación</option><option>Reparación</option>
+            <option>Instalación eléctrica</option><option>Fontanería</option>
+            <option>Pintura</option><option>Construcción</option><option>Otro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tamaño (m²)</label>
+          <input type="text" name="size" placeholder="Ej: 30m²"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Ubicación</label>
+        <input type="text" name="location" placeholder="Ej: Bogotá Centro" required/>
+      </div>
+      <div class="form-group">
+        <label>Presupuesto (COP)</label>
+        <div class="budget-input-wrap">
+          <span class="budget-prefix">$</span>
+          <input type="text" id="budgetDisplay" placeholder="0" autocomplete="off"
+                 oninput="formatBudget(this)" inputmode="numeric"/>
+          <input type="hidden" name="budget" id="budgetHidden"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Fecha de inicio</label>
+          <input type="date" name="start_date" required/>
+        </div>
+        <div class="form-group">
+          <label>Fecha estimada fin</label>
+          <input type="date" name="end_date" required/>
+        </div>
+      </div>
+      <!-- Imágenes del proyecto -->
+      <div class="form-group">
+        <label>Fotos del proyecto (opcional)</label>
+        <label class="upload-zone">
+          <input type="file" name="images" accept="image/*" multiple id="projImgInput"/>
+          <span>📷 Seleccionar imágenes</span>
+        </label>
+        <div id="projImgPreview" class="img-preview-row mt-2"></div>
+      </div>
+      <button type="submit" class="btn btn--primary btn--full" onclick="return validateBudget()">Publicar proyecto</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+// ── Formato de presupuesto ────────────────────────────────────────────
+function formatBudget(input) {
+  // Quitar todo lo que no sea dígito
+  let raw = input.value.replace(/\D/g, '');
+  // Guardar valor limpio en el hidden
+  document.getElementById('budgetHidden').value = raw;
+  // Mostrar con puntos de miles
+  if (raw === '') {
+    input.value = '';
+    return;
+  }
+  input.value = parseInt(raw, 10).toLocaleString('es-CO');
+}
+
+function validateBudget() {
+  const hidden = document.getElementById('budgetHidden');
+  const display = document.getElementById('budgetDisplay');
+  if (!hidden.value || parseInt(hidden.value) <= 0) {
+    display.style.borderColor = '#ef4444';
+    display.focus();
+    return false;
+  }
+  display.style.borderColor = '';
+  return true;
+}
+
+// ── Preview de imágenes del proyecto ─────────────────────────────────
+document.getElementById('projImgInput')?.addEventListener('change', function() {
+  const preview = document.getElementById('projImgPreview');
+  preview.innerHTML = '';
+  Array.from(this.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const div = document.createElement('div');
+      div.className = 'img-preview-item';
+      div.innerHTML = `<img src="${e.target.result}" alt="preview"/>`;
+      preview.appendChild(div);
+    };
+    reader.readAsDataURL(file);
+  });
+});
+</script>
+{% endblock %}

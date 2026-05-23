@@ -1,0 +1,86 @@
+{% macro sidebar(role, active_menu, user, unread) %}
+<aside class="sidebar">
+  <div class="sidebar__logo">
+    <img src="{{ url_for('static',filename='img/logo_dashboard.png') }}" alt="Click a Construir"/>
+  </div>
+  <nav class="sidebar__nav">
+    <ul>
+      {% if role == "cliente" %}
+        {% set items = [
+          ("cli_inicio",    "inicio",    "Inicio",    "home"),
+          ("cli_proyectos", "proyectos", "Proyectos", "folder"),
+          ("cli_mensajes",  "mensajes",  "Mensajes",  "chat"),
+          ("cli_perfil",    "perfil",    "Perfil",    "user"),
+        ] %}
+      {% else %}
+        {% set items = [
+          ("pro_inicio",    "inicio",    "Inicio",    "home"),
+          ("pro_proyectos", "proyectos", "Proyectos", "folder"),
+          ("pro_mensajes",  "mensajes",  "Mensajes",  "chat"),
+          ("pro_perfil",    "perfil",    "Perfil",    "user"),
+        ] %}
+      {% endif %}
+      {% for route, menu_id, label, icon in items %}
+      <li>
+        <a href="{{ url_for(route) }}" class="nav-item {% if active_menu == menu_id %}nav-item--active{% endif %}">
+          {% if icon == "home" %}
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          {% elif icon == "folder" %}
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          {% elif icon == "chat" %}
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          {% else %}
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          {% endif %}
+          {{ label }}
+          {% if menu_id == "mensajes" and unread > 0 %}
+          <span class="badge-count">{{ unread }}</span>
+          {% endif %}
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </nav>
+  <div class="sidebar__footer">
+    <a href="{{ url_for('logout') }}" class="logout-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Cerrar sesión
+    </a>
+  </div>
+</aside>
+{% endmacro %}
+
+{% macro topbar(user, placeholder, search_url, unread) %}
+{% set perfil_url = url_for('cli_perfil') if user.role == 'cliente' else url_for('pro_perfil') %}
+<header class="top-header">
+  <form method="GET" action="{{ search_url }}" class="search-form">
+    <div class="search-box">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="search" name="q" placeholder="{{ placeholder }}" value="{{ request.args.get('q','') }}" autocomplete="off"/>
+    </div>
+  </form>
+  <!-- Avatar clickeable → va al perfil -->
+  <a href="{{ perfil_url }}" class="user-badge" title="Ver mi perfil">
+    {% set av = user.avatar or user.avatar_url %}
+    {% if av %}
+    <img src="{{ av }}" alt="{{ user.name }}" class="avatar avatar--photo"/>
+    {% else %}
+    <div class="avatar">{{ user.name[:2].upper() }}</div>
+    {% endif %}
+    <span class="user-name">{{ user.name }}</span>
+    {% if unread > 0 %}<span class="notif-dot"></span>{% endif %}
+  </a>
+</header>
+{% endmacro %}
+
+{% macro avatar_img(user_or_prof, size="") %}
+{% set av = user_or_prof.avatar_url or user_or_prof.avatar %}
+{% if av %}
+<img src="{{ av }}" alt="{{ user_or_prof.name }}"
+     class="avatar avatar--photo {% if size == 'lg' %}avatar--lg{% elif size == 'xl' %}avatar--xl{% elif size == 'sm' %}avatar--sm{% endif %}"/>
+{% else %}
+<div class="avatar {% if size == 'lg' %}avatar--lg{% elif size == 'xl' %}avatar--xl{% elif size == 'sm' %}avatar--sm{% endif %}">
+  {{ (user_or_prof.initials if user_or_prof.initials is defined else user_or_prof.name[:2].upper()) }}
+</div>
+{% endif %}
+{% endmacro %}
