@@ -220,9 +220,13 @@ Si no tienes las credenciales de Supabase configuradas, la app detecta automáti
 
 ## Autores
 ELKIN YAMITH ALMONACID LOPEZ
+
 BRAYAN DAVID CUITIVA UMBARILA
+
 JUAN CAMILO GARCIA QUEVEDO
+
 BRAYAN YAIR MENDEZ RODRIGUEZ
+
 
 Proyecto desarrollado para la asignatura Ingeniería de Software II  
 Universidad de Cundinamarca — 2026
